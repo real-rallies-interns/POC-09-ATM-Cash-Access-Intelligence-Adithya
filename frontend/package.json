@@ -1,0 +1,12 @@
+{
+  "name": "atm-cash-access-intelligence-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
+}

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>REAL RAILS | Cash Access Intelligence Suite</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  >
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet/dist/leaflet.css"
+  />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <p class="eyebrow">REAL RAILS / CASH ACCESS INFRASTRUCTURE</p>
+      <h1>Cash Access Intelligence Suite</h1>
+    </div>
+  </header>
+
+  <main class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-inner">
+        <h2 class="sidebar-title">Intelligence Panel</h2>
+
+        <section class="card">
+          <h3>Area Compare</h3>
+
+          <label class="field-label" for="area-a">Area A</label>
+          <select id="area-a"></select>
+
+          <label class="field-label" for="area-b">Area B</label>
+          <select id="area-b"></select>
+
+          <button id="compare-btn" type="button">Compare Areas</button>
+        </section>
+
+        <section class="card">
+          <h3>Area A Summary</h3>
+          <p id="area-a-result">--</p>
+        </section>
+
+        <section class="card">
+          <h3>Area B Summary</h3>
+          <p id="area-b-result">--</p>
+        </section>
+
+        <section class="card split-card">
+          <div>
+            <h3>Coverage Score</h3>
+            <p id="coverage-score">--</p>
+          </div>
+          <div>
+            <h3>Area Classification</h3>
+            <p id="area-score">--</p>
+          </div>
+        </section>
+
+        <section class="card">
+          <h3>Underserved Area</h3>
+          <p id="underserved-area">--</p>
+        </section>
+
+        <section class="card">
+          <h3>Comparison Insight</h3>
+          <p id="compare-result">--</p>
+          <div class="divider"></div>
+          <p id="comparison-verdict">--</p>
+        </section>
+
+        <section class="card split-card">
+          <div>
+            <h3>Travel Burden</h3>
+            <p id="travel-burden">--</p>
+          </div>
+          <div>
+            <h3>Demographic Risk</h3>
+            <p id="demographic-risk">--</p>
+          </div>
+        </section>
+
+        <section class="card">
+          <h3>Nearest Cash Point</h3>
+          <p id="nearest-atm">--</p>
+        </section>
+
+        <section class="card">
+          <h3>User Location</h3>
+          <p id="user-location">--</p>
+        </section>
+
+        <section class="card">
+          <h3>Infrastructure Insight</h3>
+          <p id="infra-insight">--</p>
+        </section>
+
+        <section class="card">
+          <h3>Why This Matters</h3>
+          <p>
+            Cash remains the fail-safe rail for everyday access, emergency withdrawals,
+            and financial resilience. Weak ATM and branch presence can create banking
+            deserts and increase physical travel burden.
+          </p>
+        </section>
+
+        <section class="card">
+          <h3>Who Controls the Rail</h3>
+          <p>
+            Commercial banks, independent ATM deployers, and regulators shape how
+            physical cash access infrastructure is distributed and maintained across regions.
+          </p>
+        </section>
+
+        <section class="card">
+          <h3>Data Sources</h3>
+          <p>OpenStreetMap / Overpass API for geospatial infrastructure context.</p>
+          <p>Structured mock ATM-bank datasets for intelligence simulation.</p>
+        </section>
+
+        <section class="card">
+          <h3>Metric Basis</h3>
+          <p>Coverage Score = access-point density + area service balance.</p>
+          <p>Travel Burden = estimated average access time to nearest ATM/bank.</p>
+          <p>Demographic Risk = simulated service friction indicator for the selected area.</p>
+        </section>
+
+        <button class="download-btn" id="download-btn" type="button">Download Sample Data</button>
+      </div>
+    </aside>
+
+    <section class="main-stage">
+      <div id="map"></div>
+
+      <div class="map-legend">
+        <div class="legend-item">
+          <span class="legend-dot atm-dot"></span>
+          <span>ATM Locations</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot bank-dot"></span>
+          <span>Bank Branches</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot underserved-dot"></span>
+          <span>Underserved Zone (Low Coverage)</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="dist/script.js"></script>
+</body>
+</html>
