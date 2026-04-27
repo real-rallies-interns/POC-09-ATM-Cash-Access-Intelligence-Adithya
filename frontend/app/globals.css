@@ -1,0 +1,88 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #030712;
+  color: white;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+select,
+button,
+input {
+  font: inherit;
+}
+
+.real-panel {
+  background:
+    radial-gradient(circle at top left, rgba(34, 211, 238, 0.08), transparent 35%),
+    #06101d;
+}
+
+.metric-card {
+  border: 1px solid rgba(34, 211, 238, 0.18);
+  background: rgba(8, 20, 33, 0.95);
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.info-card {
+  border: 1px solid rgba(34, 211, 238, 0.18);
+  background: rgba(8, 20, 33, 0.95);
+  border-radius: 18px;
+  padding: 16px;
+}
+
+.info-card.danger {
+  border-color: rgba(248, 113, 113, 0.35);
+}
+
+.info-card.warning {
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+.info-card.success {
+  border-color: rgba(74, 222, 128, 0.35);
+}
+
+.shadow-glow {
+  box-shadow: 0 0 30px rgba(34, 211, 238, 0.08);
+}
+
+.underserved-label {
+  color: #ff6b6b;
+  font-weight: 900;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-shadow: 0 0 10px rgba(255, 0, 0, 0.95);
+  width: 130px;
+  transform: translate(-55px, -12px);
+  pointer-events: none;
+}
+
+.pulse-circle {
+  animation: pulse-red 1.8s ease-in-out infinite;
+}
+
+@keyframes pulse-red {
+  0% {
+    stroke-opacity: 0.45;
+    fill-opacity: 0.1;
+  }
+  50% {
+    stroke-opacity: 1;
+    fill-opacity: 0.2;
+  }
+  100% {
+    stroke-opacity: 0.45;
+    fill-opacity: 0.1;
+  }
+}
