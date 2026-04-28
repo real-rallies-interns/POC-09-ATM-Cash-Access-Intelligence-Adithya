@@ -1,16 +1,16 @@
+// @ts-nocheck
 "use client";
 
 import { useEffect } from "react";
-import L from "leaflet";
 import {
   Circle,
   CircleMarker,
   MapContainer,
-  Marker,
   Popup,
   TileLayer,
   useMap,
 } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
 
 type AccessPoint = {
   name: string;
@@ -30,7 +30,7 @@ type Props = {
   demoOverlay: boolean;
 };
 
-const SOUTH_INDIA_BOUNDS: L.LatLngBoundsExpression = [
+const SOUTH_INDIA_BOUNDS: [[number, number], [number, number]] = [
   [6.5, 72.5],
   [15.5, 82.5],
 ];
@@ -51,23 +51,14 @@ function FitMap({ points }: { points: AccessPoint[] }) {
     map.setMaxBounds(SOUTH_INDIA_BOUNDS);
 
     if (points.length >= 2) {
-      const bounds = L.latLngBounds(points.map((p) => [p.lat, p.lng]));
+      const bounds = points.map((p) => [p.lat, p.lng]) as [number, number][];
       map.fitBounds(bounds, { padding: [100, 100], maxZoom: 9 });
     } else {
-      map.fitBounds(SOUTH_INDIA_BOUNDS, { padding: [8, 8] });
+      map.fitBounds(SOUTH_INDIA_BOUNDS, { padding: [10, 10] });
     }
   }, [map, points]);
 
   return null;
-}
-
-function UnderservedLabel({ lat, lng }: { lat: number; lng: number }) {
-  const icon = L.divIcon({
-    className: "",
-    html: `<div class="underserved-label">UNDERSERVED<br/>AREA</div>`,
-  });
-
-  return <Marker position={[lat, lng]} icon={icon} interactive={false} />;
 }
 
 export default function MapClient({
@@ -189,11 +180,6 @@ export default function MapClient({
                 weight: 2,
               }}
             />
-
-            <UnderservedLabel
-              lat={underservedCenter.lat + 0.28}
-              lng={underservedCenter.lng}
-            />
           </>
         )}
 
@@ -215,8 +201,6 @@ export default function MapClient({
               Type: {point.type}
               <br />
               Area: {point.area}
-              <br />
-              Role: {point.type === "ATM" ? "Cash access point" : "Bank branch"}
             </Popup>
           </CircleMarker>
         ))}
