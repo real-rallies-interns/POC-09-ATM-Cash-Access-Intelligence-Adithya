@@ -6,8 +6,9 @@ import {
   Circle,
   CircleMarker,
   MapContainer,
-  Popup,
+  Polyline,
   TileLayer,
+  Tooltip,
   useMap,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -27,12 +28,16 @@ type Props = {
   compared: boolean;
   areaAScore: number;
   areaBScore: number;
-  demoOverlay: boolean;
+  showATM: boolean;
+  showBank: boolean;
+  showUnderserved: boolean;
+  showDemographic: boolean;
+  areaProfiles: Record<string, any>;
 };
 
-const SOUTH_INDIA_BOUNDS: [[number, number], [number, number]] = [
-  [6.5, 72.5],
-  [15.5, 82.5],
+const INDIA_BOUNDS: [[number, number], [number, number]] = [
+  [6.5, 68.0],
+  [37.5, 98.5],
 ];
 
 function getCenter(points: AccessPoint[]) {
@@ -48,17 +53,31 @@ function FitMap({ points }: { points: AccessPoint[] }) {
   const map = useMap();
 
   useEffect(() => {
-    map.setMaxBounds(SOUTH_INDIA_BOUNDS);
+    map.setMaxBounds(INDIA_BOUNDS);
 
     if (points.length >= 2) {
       const bounds = points.map((p) => [p.lat, p.lng]) as [number, number][];
-      map.fitBounds(bounds, { padding: [100, 100], maxZoom: 9 });
+      map.fitBounds(bounds, {
+        paddingTopLeft: [90, 180],
+        paddingBottomRight: [90, 90],
+        maxZoom: 7,
+      });
     } else {
-      map.fitBounds(SOUTH_INDIA_BOUNDS, { padding: [10, 10] });
+      map.fitBounds(INDIA_BOUNDS, { padding: [20, 20] });
     }
   }, [map, points]);
 
   return null;
+}
+
+function displayPosition(point: AccessPoint, index: number): [number, number] {
+  const angle = (index % 12) * 30 * (Math.PI / 180);
+  const offset = point.type === "Bank" ? 0.012 : 0.009;
+
+  return [
+    point.lat + Math.sin(angle) * offset,
+    point.lng + Math.cos(angle) * offset,
+  ];
 }
 
 export default function MapClient({
@@ -68,11 +87,21 @@ export default function MapClient({
   compared,
   areaAScore,
   areaBScore,
-  demoOverlay,
+  showATM,
+  showBank,
+  showUnderserved,
+  showDemographic,
+  areaProfiles,
 }: Props) {
+  const filteredByType = points.filter((point) => {
+    if (point.type === "ATM" && !showATM) return false;
+    if (point.type === "Bank" && !showBank) return false;
+    return true;
+  });
+
   const visiblePoints = compared
-    ? points.filter((p) => p.area === areaA || p.area === areaB)
-    : points;
+    ? filteredByType.filter((p) => p.area === areaA || p.area === areaB)
+    : filteredByType;
 
   const areaAPoints = points.filter((p) => p.area === areaA);
   const areaBPoints = points.filter((p) => p.area === areaB);
@@ -80,99 +109,142 @@ export default function MapClient({
   const centerA = getCenter(areaAPoints);
   const centerB = getCenter(areaBPoints);
 
-  const diff = Math.abs(areaAScore - areaBScore);
-  const similar = compared && diff <= 5;
+  const isEqual = areaAScore === areaBScore;
 
-  const underservedCenter =
-    !compared || similar
-      ? null
-      : areaAScore < areaBScore
-      ? centerA
-      : centerB;
+  const weakerCenter = areaAScore <= areaBScore ? centerA : centerB;
+  const strongerCenter = areaAScore > areaBScore ? centerA : centerB;
 
-  const frictionCenter =
-    !compared || similar
-      ? null
-      : areaAScore > areaBScore
-      ? centerA
-      : centerB;
+  const weakerArea = areaAScore <= areaBScore ? areaA : areaB;
+  const weakerScore = Math.min(areaAScore, areaBScore);
+  const strongerScore = Math.max(areaAScore, areaBScore);
+
+  const weakRadius =
+    weakerScore < 35 ? 70000 : weakerScore < 70 ? 54000 : 38000;
+
+  const strongRadius =
+    strongerScore < 35 ? 42000 : strongerScore < 70 ? 36000 : 30000;
+
+  const demographicProfile = areaProfiles?.[weakerArea];
 
   return (
-    <div className="h-full w-full bg-black">
+    <div className="relative h-full w-full bg-[#030712]">
+      <div className="absolute bottom-5 left-5 z-[1000] rounded-xl border border-cyan-400/20 bg-[#030712]/90 px-4 py-3 text-xs text-slate-300 shadow-glow">
+        <div className="mb-2 font-bold text-cyan-300">Map Legend</div>
+
+        <div className="flex items-center gap-2">
+          <span className="h-3 w-3 rounded-full bg-cyan-400"></span>
+          ATM
+        </div>
+
+        <div className="mt-1 flex items-center gap-2">
+          <span className="h-3 w-3 rounded-full bg-indigo-400"></span>
+          Bank
+        </div>
+
+        <div className="mt-1 flex items-center gap-2">
+          <span className="h-3 w-3 rounded-full border-2 border-red-400"></span>
+          Underserved Zone
+        </div>
+
+        <div className="mt-1 flex items-center gap-2">
+          <span className="h-3 w-3 rounded-full border-2 border-amber-400"></span>
+          Demographic Pressure
+        </div>
+      </div>
+
       <MapContainer
-        center={[10.5, 76.8]}
-        zoom={7}
-        minZoom={6}
-        maxZoom={12}
-        maxBounds={SOUTH_INDIA_BOUNDS}
+        key={`${areaA}-${areaB}-${showATM}-${showBank}-${showUnderserved}-${showDemographic}`}
+        center={[22.5, 79.0]}
+        zoom={5}
+        minZoom={4}
+        maxZoom={13}
+        maxBounds={INDIA_BOUNDS}
         maxBoundsViscosity={1.0}
         scrollWheelZoom
-        className="h-full w-full bg-black"
+        className="h-full w-full bg-[#030712]"
       >
         <TileLayer
           attribution="&copy; OpenStreetMap &copy; CARTO"
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
         />
 
-        <FitMap points={visiblePoints} />
+        <FitMap points={visiblePoints.length ? visiblePoints : points} />
 
-        {similar && centerA && (
+        {centerA && centerB && (
+          <Polyline
+            positions={[
+              [centerA.lat, centerA.lng],
+              [centerB.lat, centerB.lng],
+            ]}
+            pathOptions={{
+              color: "#94a3b8",
+              weight: 1,
+              opacity: 0.45,
+              dashArray: "5 10",
+            }}
+          />
+        )}
+
+        {isEqual && centerA && (
           <Circle
             center={[centerA.lat, centerA.lng]}
-            radius={26000}
+            radius={strongRadius}
             pathOptions={{
-              color: "#f59e0b",
-              fillColor: "#f59e0b",
+              color: "#38bdf8",
+              fillColor: "#38bdf8",
               fillOpacity: 0.08,
-              weight: 2,
+              weight: 3,
+              dashArray: "6 8",
             }}
           />
         )}
 
-        {similar && centerB && (
+        {isEqual && centerB && (
           <Circle
             center={[centerB.lat, centerB.lng]}
-            radius={26000}
+            radius={strongRadius}
             pathOptions={{
-              color: "#f59e0b",
-              fillColor: "#f59e0b",
+              color: "#38bdf8",
+              fillColor: "#38bdf8",
               fillOpacity: 0.08,
-              weight: 2,
+              weight: 3,
+              dashArray: "6 8",
             }}
           />
         )}
 
-        {demoOverlay && frictionCenter && (
+        {!isEqual && strongerCenter && (
           <Circle
-            center={[frictionCenter.lat, frictionCenter.lng]}
-            radius={28000}
+            center={[strongerCenter.lat, strongerCenter.lng]}
+            radius={strongRadius}
             pathOptions={{
-              color: "#f59e0b",
-              fillColor: "#f59e0b",
-              fillOpacity: 0.04,
-              weight: 2,
+              color: "#38bdf8",
+              fillColor: "#38bdf8",
+              fillOpacity: 0.08,
+              weight: 3,
+              dashArray: "6 8",
             }}
           />
         )}
 
-        {underservedCenter && (
+        {showUnderserved && !isEqual && weakerCenter && (
           <>
             <Circle
-              center={[underservedCenter.lat, underservedCenter.lng]}
-              radius={30000}
+              center={[weakerCenter.lat, weakerCenter.lng]}
+              radius={weakRadius}
               pathOptions={{
                 color: "#ef4444",
                 fillColor: "#ef4444",
                 fillOpacity: 0.14,
-                weight: 3,
-                dashArray: "9 8",
+                weight: 4,
+                dashArray: "10 8",
                 className: "pulse-circle",
               }}
             />
 
             <Circle
-              center={[underservedCenter.lat, underservedCenter.lng]}
-              radius={12000}
+              center={[weakerCenter.lat, weakerCenter.lng]}
+              radius={weakRadius / 2.5}
               pathOptions={{
                 color: "#fb7185",
                 fillColor: "#ef4444",
@@ -183,27 +255,43 @@ export default function MapClient({
           </>
         )}
 
-        {visiblePoints.map((point, index) => (
-          <CircleMarker
-            key={`${point.name}-${index}`}
-            center={[point.lat, point.lng]}
-            radius={point.type === "ATM" ? 7 : 8}
+        {showDemographic && !isEqual && weakerCenter && demographicProfile && (
+          <Circle
+            center={[weakerCenter.lat, weakerCenter.lng]}
+            radius={weakRadius * 1.25}
             pathOptions={{
-              color: point.type === "ATM" ? "#38bdf8" : "#818cf8",
-              fillColor: point.type === "ATM" ? "#38bdf8" : "#818cf8",
-              fillOpacity: 0.95,
+              color: "#f59e0b",
+              fillColor: "#f59e0b",
+              fillOpacity: 0.045,
               weight: 2,
+              dashArray: "3 10",
             }}
-          >
-            <Popup>
-              <strong>{point.name}</strong>
-              <br />
-              Type: {point.type}
-              <br />
-              Area: {point.area}
-            </Popup>
-          </CircleMarker>
-        ))}
+          />
+        )}
+
+        {visiblePoints.map((point, index) => {
+          const isATM = point.type === "ATM";
+          const position = displayPosition(point, index);
+
+          return (
+            <CircleMarker
+              key={`${point.name}-${index}`}
+              center={position}
+              radius={isATM ? 7 : 10}
+              pathOptions={{
+                color: isATM ? "#38bdf8" : "#818cf8",
+                fillColor: isATM ? "#38bdf8" : "#818cf8",
+                fillOpacity: 0.95,
+                weight: 2,
+                className: isATM ? "atm-marker" : "bank-marker",
+              }}
+            >
+              <Tooltip direction="top" offset={[0, -8]} opacity={0.95}>
+                {point.name} • {point.type} • {point.area}
+              </Tooltip>
+            </CircleMarker>
+          );
+        })}
       </MapContainer>
     </div>
   );

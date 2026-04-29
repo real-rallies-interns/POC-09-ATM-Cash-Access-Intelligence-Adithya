@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 
 const MapClient = dynamic(() => import("./MapClient"), {
@@ -15,316 +15,361 @@ type AccessPoint = {
   lng: number;
 };
 
+type AreaProfile = {
+  state: string;
+  populationPressure: number;
+  travelBurden: number;
+  incomeFriction: number;
+};
+
 const fallbackPoints: AccessPoint[] = [
-  { name: "SBI ATM Thiruvananthapuram", type: "ATM", area: "Thiruvananthapuram", lat: 8.5097, lng: 76.949 },
-  { name: "Federal Bank Thiruvananthapuram", type: "Bank", area: "Thiruvananthapuram", lat: 8.5241, lng: 76.9366 },
-
-  { name: "SBI ATM Kollam", type: "ATM", area: "Kollam", lat: 8.8932, lng: 76.6141 },
-  { name: "South Indian Bank Kollam", type: "Bank", area: "Kollam", lat: 8.8818, lng: 76.592 },
-  { name: "Axis ATM Kollam Town", type: "ATM", area: "Kollam", lat: 8.8853, lng: 76.591 },
-
-  { name: "SBI ATM Kottayam", type: "ATM", area: "Kottayam", lat: 9.5916, lng: 76.5222 },
-  { name: "Federal Bank Kottayam", type: "Bank", area: "Kottayam", lat: 9.595, lng: 76.5278 },
-  { name: "Canara ATM Kottayam", type: "ATM", area: "Kottayam", lat: 9.6727, lng: 76.5633 },
-
-  { name: "HDFC ATM Alappuzha", type: "ATM", area: "Alappuzha", lat: 9.4981, lng: 76.3388 },
-
-  { name: "SBI ATM Ernakulam", type: "ATM", area: "Ernakulam", lat: 9.9816, lng: 76.2999 },
-  { name: "Canara Bank Ernakulam", type: "Bank", area: "Ernakulam", lat: 9.9735, lng: 76.2863 },
-  { name: "HDFC ATM Kochi", type: "ATM", area: "Ernakulam", lat: 9.9312, lng: 76.2673 },
-  { name: "Union Bank Aluva", type: "Bank", area: "Ernakulam", lat: 10.1076, lng: 76.3516 },
-
-  { name: "SBI ATM Thrissur", type: "ATM", area: "Thrissur", lat: 10.5276, lng: 76.2144 },
-  { name: "SBI Branch Thrissur", type: "Bank", area: "Thrissur", lat: 10.5247, lng: 76.213 },
-  { name: "Federal ATM Guruvayur", type: "ATM", area: "Thrissur", lat: 10.5943, lng: 76.0411 },
-
-  { name: "SBI ATM Palakkad", type: "ATM", area: "Palakkad", lat: 10.7867, lng: 76.6548 },
-  { name: "Federal Bank Palakkad", type: "Bank", area: "Palakkad", lat: 10.7732, lng: 76.651 },
-
-  { name: "SBI ATM Malappuram", type: "ATM", area: "Malappuram", lat: 11.0732, lng: 76.0744 },
-
-  { name: "HDFC ATM Kozhikode", type: "ATM", area: "Kozhikode", lat: 11.2588, lng: 75.7804 },
-  { name: "SBI Branch Kozhikode", type: "Bank", area: "Kozhikode", lat: 11.2519, lng: 75.7793 },
-  { name: "Axis ATM Mavoor Road", type: "ATM", area: "Kozhikode", lat: 11.2671, lng: 75.7935 },
-
-  { name: "SBI ATM Kalpetta", type: "ATM", area: "Wayanad", lat: 11.606, lng: 76.0827 },
-
-  { name: "Federal ATM Kannur", type: "ATM", area: "Kannur", lat: 11.8745, lng: 75.3704 },
-  { name: "SBI Branch Kannur", type: "Bank", area: "Kannur", lat: 11.7481, lng: 75.4929 },
+  { name: "SBI ATM Delhi", type: "ATM", area: "Delhi", lat: 28.6315, lng: 77.2167 },
+  { name: "HDFC Bank Delhi", type: "Bank", area: "Delhi", lat: 28.6139, lng: 77.209 },
+  { name: "SBI ATM Patna", type: "ATM", area: "Patna", lat: 25.5941, lng: 85.1376 },
+  { name: "PNB Patna", type: "Bank", area: "Patna", lat: 25.61, lng: 85.141 },
 ];
 
-const areaProfiles: Record<string, { populationPressure: number; travelBurden: number }> = {
-  Thiruvananthapuram: { populationPressure: 88, travelBurden: 7.8 },
-  Kollam: { populationPressure: 72, travelBurden: 5.4 },
-  Kottayam: { populationPressure: 48, travelBurden: 4.6 },
-  Alappuzha: { populationPressure: 82, travelBurden: 8.4 },
-  Ernakulam: { populationPressure: 68, travelBurden: 3.2 },
-  Thrissur: { populationPressure: 58, travelBurden: 4.1 },
-  Palakkad: { populationPressure: 64, travelBurden: 6.2 },
-  Malappuram: { populationPressure: 92, travelBurden: 9.1 },
-  Kozhikode: { populationPressure: 62, travelBurden: 4.5 },
-  Wayanad: { populationPressure: 78, travelBurden: 10.2 },
-  Kannur: { populationPressure: 52, travelBurden: 5.6 },
+const areaProfiles: Record<string, AreaProfile> = {
+  Delhi: { state: "Delhi", populationPressure: 91, travelBurden: 4.8, incomeFriction: 42 },
+  Mumbai: { state: "Maharashtra", populationPressure: 94, travelBurden: 5.2, incomeFriction: 48 },
+  Bengaluru: { state: "Karnataka", populationPressure: 82, travelBurden: 4.1, incomeFriction: 36 },
+  Chennai: { state: "Tamil Nadu", populationPressure: 78, travelBurden: 5.8, incomeFriction: 44 },
+  Hyderabad: { state: "Telangana", populationPressure: 76, travelBurden: 5.4, incomeFriction: 41 },
+  Kolkata: { state: "West Bengal", populationPressure: 84, travelBurden: 6.2, incomeFriction: 52 },
+  Kochi: { state: "Kerala", populationPressure: 58, travelBurden: 3.8, incomeFriction: 28 },
+  Ahmedabad: { state: "Gujarat", populationPressure: 72, travelBurden: 5.6, incomeFriction: 39 },
+  Jaipur: { state: "Rajasthan", populationPressure: 68, travelBurden: 6.7, incomeFriction: 46 },
+  Lucknow: { state: "Uttar Pradesh", populationPressure: 81, travelBurden: 7.2, incomeFriction: 55 },
+  Guwahati: { state: "Assam", populationPressure: 73, travelBurden: 8.4, incomeFriction: 61 },
+  Patna: { state: "Bihar", populationPressure: 89, travelBurden: 8.8, incomeFriction: 64 },
+  Bhopal: { state: "Madhya Pradesh", populationPressure: 66, travelBurden: 7.4, incomeFriction: 49 },
+  Bhubaneswar: { state: "Odisha", populationPressure: 63, travelBurden: 7.9, incomeFriction: 54 },
 };
 
 const areas = Object.keys(areaProfiles);
 
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function distanceKm(a: AccessPoint, b: AccessPoint) {
+  const R = 6371;
+  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
+  const lat1 = (a.lat * Math.PI) / 180;
+  const lat2 = (b.lat * Math.PI) / 180;
+
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+
+  return R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+}
+
 export default function Home() {
   const [points, setPoints] = useState<AccessPoint[]>(fallbackPoints);
-  const [areaA, setAreaA] = useState("Thiruvananthapuram");
-  const [areaB, setAreaB] = useState("Kollam");
-  const [compared, setCompared] = useState(true);
-  const [demoOverlay, setDemoOverlay] = useState(true);
+  const [dataMode, setDataMode] = useState("Fallback Data");
+
+  const [areaA, setAreaA] = useState("Delhi");
+  const [areaB, setAreaB] = useState("Patna");
+
+  const [showATM, setShowATM] = useState(true);
+  const [showBank, setShowBank] = useState(true);
+  const [showUnderserved, setShowUnderserved] = useState(true);
+  const [showDemographic, setShowDemographic] = useState(true);
 
   useEffect(() => {
     fetch("http://127.0.0.1:8000/access-points")
       .then((res) => {
-        if (!res.ok) throw new Error("Backend response failed");
+        if (!res.ok) throw new Error("Backend failed");
         return res.json();
       })
       .then((data: AccessPoint[]) => {
-        if (Array.isArray(data) && data.length > 0) setPoints(data);
+        if (Array.isArray(data) && data.length > 0) {
+          setPoints(data);
+          setDataMode("FastAPI Live Data");
+        }
       })
       .catch(() => {
         setPoints(fallbackPoints);
+        setDataMode("Fallback Data");
       });
   }, []);
 
   const getAreaPoints = (area: string) => points.filter((p) => p.area === area);
 
-  const calculateCoverage = (area: string) => {
+  const calculateNearestATMDistance = (area: string) => {
     const areaPoints = getAreaPoints(area);
-    const atm = areaPoints.filter((p) => p.type === "ATM").length;
-    const bank = areaPoints.filter((p) => p.type === "Bank").length;
+    const atms = areaPoints.filter((p) => p.type === "ATM");
+    const banks = areaPoints.filter((p) => p.type === "Bank");
     const profile = areaProfiles[area];
 
-    const infrastructureScore = atm * 18 + bank * 26;
-    const pressurePenalty = profile.populationPressure * 0.32;
-    const travelPenalty = profile.travelBurden * 2.2;
+    if (!atms.length || !banks.length) {
+      return Number(clamp(profile.travelBurden, 3.5, 13.5).toFixed(1));
+    }
 
-    return Math.max(
-      8,
-      Math.min(96, Math.round(infrastructureScore - pressurePenalty - travelPenalty + 45))
+    const distances = banks.map((bank) =>
+      Math.min(...atms.map((atm) => distanceKm(bank, atm)))
     );
+
+    const realDistance = distances.reduce((sum, d) => sum + d, 0) / distances.length;
+    const blendedDistance = realDistance * 0.35 + profile.travelBurden * 0.65;
+
+    return Number(clamp(blendedDistance, 2.2, 14.5).toFixed(1));
   };
 
-  const areaAScore = calculateCoverage(areaA);
-  const areaBScore = calculateCoverage(areaB);
+  const analyzeArea = (area: string) => {
+    const areaPoints = getAreaPoints(area);
+    const profile = areaProfiles[area];
 
-  const priorityArea =
-    Math.abs(areaAScore - areaBScore) <= 5
-      ? "Both regions require monitoring"
-      : areaAScore < areaBScore
-      ? areaA
-      : areaB;
+    const atmCount = areaPoints.filter((p) => p.type === "ATM").length;
+    const bankCount = areaPoints.filter((p) => p.type === "Bank").length;
 
-  const strongerArea =
-    Math.abs(areaAScore - areaBScore) <= 5
-      ? "Balanced"
-      : areaAScore > areaBScore
-      ? areaA
-      : areaB;
+    const infrastructureSignal = atmCount * 0.25 + bankCount * 0.45;
+    const infrastructureScore = clamp(
+      Math.round((1 - Math.exp(-infrastructureSignal)) * 75),
+      8,
+      75
+    );
 
-  const activeArea =
-    priorityArea === "Both regions require monitoring" ? areaA : priorityArea;
+    const demandPenalty = profile.populationPressure * 0.25;
+    const travelPenalty = profile.travelBurden * 2.6;
+    const frictionPenalty = profile.incomeFriction * 0.22;
 
-  const activeScore =
-    priorityArea === "Both regions require monitoring"
-      ? Math.round((areaAScore + areaBScore) / 2)
-      : Math.min(areaAScore, areaBScore);
+    const rawScore =
+      50 + infrastructureScore - demandPenalty - travelPenalty - frictionPenalty;
 
-  const underservedScore = Math.max(0, 100 - activeScore);
+    const coverage = clamp(Math.round(rawScore), 20, 92);
+    const accessGap = 100 - coverage;
 
-  const activePoints = getAreaPoints(activeArea);
-  const atmCount = activePoints.filter((p) => p.type === "ATM").length;
-  const bankCount = activePoints.filter((p) => p.type === "Bank").length;
-  const activeProfile = areaProfiles[activeArea] ?? areaProfiles[areaA];
+    const riskLevel =
+      coverage < 35 ? "High Risk" : coverage < 70 ? "Moderate Risk" : "Low Risk";
 
-  const classification =
-    activeScore < 35
-      ? "Financial Desert"
-      : activeScore < 65
-      ? "Underserved"
-      : "Stable Access";
+    const classification =
+      coverage < 35
+        ? "Financial Desert"
+        : coverage < 70
+        ? "Underserved"
+        : "Stable Access";
 
-  const riskLevel =
-    activeScore < 35 ? "High Risk" : activeScore < 65 ? "Moderate Risk" : "Low Risk";
+    return {
+      area,
+      state: profile.state,
+      atmCount,
+      bankCount,
+      totalPoints: areaPoints.length,
+      coverage,
+      accessGap,
+      riskLevel,
+      classification,
+      travelBurden: profile.travelBurden,
+      proximityDistance: calculateNearestATMDistance(area),
+      populationPressure: profile.populationPressure,
+      incomeFriction: profile.incomeFriction,
+    };
+  };
+
+  const areaAReport = useMemo(() => analyzeArea(areaA), [areaA, points]);
+  const areaBReport = useMemo(() => analyzeArea(areaB), [areaB, points]);
+
+  const isEqual = areaAReport.coverage === areaBReport.coverage;
+
+  const weakerArea = isEqual
+    ? areaAReport
+    : areaAReport.coverage < areaBReport.coverage
+    ? areaAReport
+    : areaBReport;
+
+  const strongerArea = isEqual
+    ? areaAReport
+    : areaAReport.coverage > areaBReport.coverage
+    ? areaAReport
+    : areaBReport;
+
+  const priorityLabel = isEqual ? "Balanced Access" : weakerArea.area;
+  const coverageDifference = Math.abs(areaAReport.coverage - areaBReport.coverage);
 
   const recommendedAction =
-    activeScore < 35
-      ? "Prioritize ATM deployment and bank agent coverage immediately."
-      : activeScore < 65
-      ? "Improve access density through targeted ATM and branch support."
-      : "Maintain monitoring and expand only if demand increases.";
+    isEqual
+      ? "Both areas show balanced access. Continue monitoring ATM reliability and demand growth."
+      : weakerArea.coverage < 35
+      ? `Urgently expand ATM access and banking correspondent coverage in ${weakerArea.area}.`
+      : weakerArea.coverage < 70
+      ? `Improve cash access density in ${weakerArea.area} through targeted ATM placement.`
+      : `Maintain monitoring in ${weakerArea.area}; access is currently acceptable.`;
 
   return (
-    <main className="h-screen bg-[#030712] text-white grid grid-cols-[300px_1fr_400px] overflow-hidden">
-      <aside className="real-panel border-r border-cyan-400/10 p-6 overflow-y-auto">
-        <p className="text-xs tracking-[0.28em] text-cyan-400 font-bold">
-          REAL RAILS / POC 09
-        </p>
+    <main className="h-screen bg-[#030712] text-white grid grid-cols-[1fr_390px] overflow-hidden">
+      <section className="relative border-r border-cyan-400/10">
+        <div className="absolute left-6 right-6 top-5 z-[999]">
+          <div className="rounded-2xl border border-cyan-400/20 bg-[#030712]/95 p-4 shadow-glow backdrop-blur">
+            <div className="flex flex-wrap items-end gap-4">
+              <div>
+                <p className="text-[10px] font-bold tracking-[0.28em] text-cyan-400">
+                  REAL RAILS / CASH ACCESS INTELLIGENCE
+                </p>
+                <h1 className="mt-1 text-2xl font-black">India ATM & Bank Access Map</h1>
+                <p className="mt-1 text-xs text-slate-400">
+                  Source: {dataMode} • {points.length} access points loaded
+                </p>
+              </div>
 
-        <h1 className="mt-4 text-3xl font-black leading-tight">
-          Cash Access <br /> Intelligence
-        </h1>
+              <div className="ml-auto grid grid-cols-2 gap-3">
+                <label className="text-xs text-slate-300">
+                  Area A
+                  <select
+                    value={areaA}
+                    onChange={(e) => setAreaA(e.target.value)}
+                    className="mt-1 block w-44 rounded-xl border border-cyan-400/20 bg-[#06101d] p-2 text-white"
+                  >
+                    {areas.map((area) => (
+                      <option key={area}>{area}</option>
+                    ))}
+                  </select>
+                </label>
 
-        <p className="mt-4 text-sm leading-7 text-slate-300">
-          Equity monitor for ATM, bank access, underserved zones, and physical cash infrastructure risk.
-        </p>
+                <label className="text-xs text-slate-300">
+                  Compare With
+                  <select
+                    value={areaB}
+                    onChange={(e) => setAreaB(e.target.value)}
+                    className="mt-1 block w-44 rounded-xl border border-cyan-400/20 bg-[#06101d] p-2 text-white"
+                  >
+                    {areas.map((area) => (
+                      <option key={area}>{area}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            </div>
 
-        <section className="info-card mt-8">
-          <h2 className="text-xl font-bold text-cyan-400">Region Compare</h2>
+            <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-300">
+              <label className="rounded-full bg-cyan-400/10 px-3 py-1 text-cyan-300">
+                <input type="checkbox" checked={showATM} onChange={(e) => setShowATM(e.target.checked)} className="mr-2" />
+                Show ATM
+              </label>
 
-          <label className="mt-6 block text-sm text-slate-300">Area A</label>
-          <select
-            value={areaA}
-            onChange={(e) => setAreaA(e.target.value)}
-            className="mt-2 w-full rounded-xl border border-cyan-400/20 bg-[#030712] p-3 text-white"
-          >
-            {areas.map((area) => (
-              <option key={area}>{area}</option>
-            ))}
-          </select>
+              <label className="rounded-full bg-indigo-400/10 px-3 py-1 text-indigo-300">
+                <input type="checkbox" checked={showBank} onChange={(e) => setShowBank(e.target.checked)} className="mr-2" />
+                Show Bank
+              </label>
 
-          <label className="mt-5 block text-sm text-slate-300">Area B</label>
-          <select
-            value={areaB}
-            onChange={(e) => setAreaB(e.target.value)}
-            className="mt-2 w-full rounded-xl border border-cyan-400/20 bg-[#030712] p-3 text-white"
-          >
-            {areas.map((area) => (
-              <option key={area}>{area}</option>
-            ))}
-          </select>
+              <label className="rounded-full bg-red-400/10 px-3 py-1 text-red-300">
+                <input type="checkbox" checked={showUnderserved} onChange={(e) => setShowUnderserved(e.target.checked)} className="mr-2" />
+                Show Underserved
+              </label>
 
-          <button
-            onClick={() => setCompared(true)}
-            className="mt-6 w-full rounded-xl border border-cyan-400 bg-cyan-950/40 p-3 font-bold text-cyan-300 hover:bg-cyan-400 hover:text-black"
-          >
-            Compare Areas
-          </button>
-        </section>
-
-        <section className="info-card mt-6">
-          <h2 className="text-xl font-bold text-cyan-400">Layers</h2>
-          <label className="mt-4 flex items-center gap-3 text-sm">
-            <input
-              type="checkbox"
-              checked={demoOverlay}
-              onChange={(e) => setDemoOverlay(e.target.checked)}
-            />
-            Demographic friction overlay
-          </label>
-        </section>
-
-        <section className="info-card mt-6">
-          <h2 className="text-xl font-bold text-cyan-400">Legend</h2>
-          <div className="mt-4 space-y-2 text-sm">
-            <p><span className="text-cyan-400">●</span> ATM</p>
-            <p><span className="text-indigo-400">●</span> Bank</p>
-            <p><span className="text-red-400">●</span> Underserved Area</p>
-            <p><span className="text-amber-400">●</span> Structural Friction</p>
+              <label className="rounded-full bg-amber-400/10 px-3 py-1 text-amber-300">
+                <input type="checkbox" checked={showDemographic} onChange={(e) => setShowDemographic(e.target.checked)} className="mr-2" />
+                Demographic Pressure
+              </label>
+            </div>
           </div>
-        </section>
-      </aside>
-
-      <section className="relative border-x border-cyan-400/10">
-        <div className="absolute left-8 top-8 z-[999] rounded-2xl border border-cyan-400/20 bg-[#030712]/95 p-6 shadow-glow">
-          <p className="text-xs tracking-[0.35em] text-cyan-400 font-bold">
-            CASH ACCESS RAIL
-          </p>
-          <h2 className="mt-3 text-3xl font-black">Branch Density Map</h2>
-          <p className="mt-2 text-slate-300">
-            ATM + bank points, underserved scoring, demographic friction.
-          </p>
         </div>
 
         <MapClient
           points={points}
           areaA={areaA}
           areaB={areaB}
-          compared={compared}
-          areaAScore={areaAScore}
-          areaBScore={areaBScore}
-          demoOverlay={demoOverlay}
+          compared={true}
+          areaAScore={areaAReport.coverage}
+          areaBScore={areaBReport.coverage}
+          showATM={showATM}
+          showBank={showBank}
+          showUnderserved={showUnderserved}
+          showDemographic={showDemographic}
+          areaProfiles={areaProfiles}
         />
       </section>
 
-      <aside className="real-panel p-6 overflow-y-auto">
-        <h2 className="text-2xl font-black text-cyan-400">Intelligence Dashboard</h2>
+      <aside className="real-panel overflow-y-auto p-6">
+        <p className="text-xs font-bold tracking-[0.28em] text-cyan-400">INTELLIGENCE DASHBOARD</p>
+        <h2 className="mt-2 text-3xl font-black">Access Risk Summary</h2>
 
         <div className="mt-6 grid grid-cols-2 gap-4">
           <div className="metric-card">
             <p className="text-sm text-slate-300">Priority Coverage</p>
-            <h3 className="text-3xl font-black text-emerald-400">{activeScore}%</h3>
-            <p className="text-xs text-slate-400">{activeArea}</p>
+            <h3 className="mt-1 text-4xl font-black text-cyan-300">{weakerArea.coverage}%</h3>
+            <p className="text-xs text-slate-400">{priorityLabel}</p>
           </div>
 
           <div className="metric-card danger">
-            <p className="text-sm text-slate-300">Underserved</p>
-            <h3 className="text-3xl font-black text-red-400">{underservedScore}%</h3>
-            <p className="text-xs text-slate-400">{riskLevel}</p>
+            <p className="text-sm text-slate-300">Access Gap</p>
+            <h3 className="mt-1 text-4xl font-black text-red-400">{weakerArea.accessGap}%</h3>
+            <p className="text-xs text-slate-400">{weakerArea.riskLevel}</p>
           </div>
 
           <div className="metric-card">
             <p className="text-sm text-slate-300">ATM / Bank</p>
-            <h3 className="text-2xl font-black">{atmCount} / {bankCount}</h3>
+            <h3 className="mt-1 text-2xl font-black">
+              {weakerArea.atmCount} / {weakerArea.bankCount}
+            </h3>
           </div>
 
           <div className="metric-card">
-            <p className="text-sm text-slate-300">Avg Travel</p>
-            <h3 className="text-2xl font-black">{activeProfile.travelBurden} km</h3>
+            <p className="text-sm text-slate-300">Nearest ATM</p>
+            <h3 className="mt-1 text-2xl font-black">{weakerArea.proximityDistance} km</h3>
           </div>
         </div>
 
         <section className="info-card mt-5">
-          <h3 className="text-xl font-bold text-cyan-400">Area Classification</h3>
-          <h2 className="mt-4 text-3xl font-black">{classification}</h2>
-          <p className="mt-3 text-slate-300">
-            {activeArea} has {activeScore}% access coverage with {activeProfile.populationPressure}% synthetic demand pressure.
-          </p>
-        </section>
-
-        <section className="info-card mt-5">
-          <h3 className="text-xl font-bold text-cyan-400">Region Compare</h3>
-          <p className="mt-4 font-semibold">{areaA}: {areaAScore}% coverage</p>
-          <p className="font-semibold">{areaB}: {areaBScore}% coverage</p>
-          <p className="mt-4 text-lg font-bold text-red-400">Priority Area: {priorityArea}</p>
-          <p className="text-sm text-slate-400">Stronger reference: {strongerArea}</p>
+          <h3 className="text-lg font-bold text-cyan-300">Area Comparison</h3>
+          <div className="mt-4 space-y-3">
+            <p><b>{areaAReport.area}</b>: {areaAReport.coverage}% coverage</p>
+            <p><b>{areaBReport.area}</b>: {areaBReport.coverage}% coverage</p>
+            <p className="text-red-300">Intervention Priority: <b>{priorityLabel}</b></p>
+            <p className="text-sm text-slate-400">
+              {isEqual
+                ? "Both areas have equal coverage scores."
+                : `${strongerArea.area} outperforms by ${coverageDifference} coverage points.`}
+            </p>
+          </div>
         </section>
 
         <section className="info-card danger mt-5">
-          <h3 className="text-xl font-bold text-red-300">Underserved Area Scoring</h3>
-          <p className="mt-4 leading-7">
-            {activeArea} is flagged because its cash access coverage is weaker after considering ATM density,
-            bank branch support, travel burden, and demographic demand pressure.
+          <h3 className="text-lg font-bold text-red-300">Access Classification Insight</h3>
+          <p className="mt-3 leading-7 text-slate-300">
+            {priorityLabel} is classified as <b>{weakerArea.classification}</b> after considering
+            ATM density, bank availability, population pressure, travel burden, and income friction.
           </p>
         </section>
 
         <section className="info-card warning mt-5">
-          <h3 className="text-xl font-bold text-yellow-300">Demographic Overlay</h3>
-          <p className="mt-4 leading-7">
-            The friction layer highlights areas where population need may be higher than available ATM and branch infrastructure.
+          <h3 className="text-lg font-bold text-amber-300">Demographic Overlay</h3>
+          <p className="mt-3 leading-7 text-slate-300">
+            Population pressure is <b>{weakerArea.populationPressure}%</b> and income friction is{" "}
+            <b>{weakerArea.incomeFriction}%</b>. This highlights where weak cash access becomes a
+            social infrastructure risk.
           </p>
         </section>
 
         <section className="info-card mt-5">
-          <h3 className="text-xl font-bold text-cyan-400">Recommended Action</h3>
-          <p className="mt-4 leading-7">{recommendedAction}</p>
-        </section>
-
-        <section className="info-card mt-5">
-          <h3 className="text-xl font-bold text-cyan-400">Why This Matters</h3>
-          <p className="mt-4 leading-7">
-            Cash remains a fallback rail during payment outages, disasters, and financial exclusion.
-            Weak access reduces emergency financial resilience.
+          <h3 className="text-lg font-bold text-cyan-300">Proximity Modeling</h3>
+          <p className="mt-3 leading-7 text-slate-300">
+            Estimated average distance to the nearest ATM in {weakerArea.area} is{" "}
+            <b>{weakerArea.proximityDistance} km</b>. This represents the physical effort required
+            to access cash.
           </p>
         </section>
 
         <section className="info-card mt-5">
-          <h3 className="text-xl font-bold text-cyan-400">Who Controls the Rail</h3>
-          <p className="mt-4 leading-7">
-            Commercial banks, independent ATM deployers, regulators, and local planners shape physical cash access.
+          <h3 className="text-lg font-bold text-cyan-300">Recommended Action</h3>
+          <p className="mt-3 leading-7 text-slate-300">{recommendedAction}</p>
+        </section>
+
+        <section className="info-card mt-5">
+          <h3 className="text-lg font-bold text-cyan-300">Why This Matters</h3>
+          <p className="mt-3 leading-7 text-slate-300">
+            Cash is still a fallback payment rail during outages, emergencies, and exclusion from
+            digital payment systems. Weak physical access can reduce financial resilience.
+          </p>
+        </section>
+
+        <section className="info-card mt-5">
+          <h3 className="text-lg font-bold text-cyan-300">Who Controls the Rail</h3>
+          <p className="mt-3 leading-7 text-slate-300">
+            Banks, ATM deployers, regulators, and local planners shape the physical cash access
+            network. This dashboard helps identify where that rail is failing.
           </p>
         </section>
       </aside>

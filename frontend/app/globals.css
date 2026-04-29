@@ -29,8 +29,12 @@ input {
 .metric-card {
   border: 1px solid rgba(34, 211, 238, 0.18);
   background: rgba(8, 20, 33, 0.95);
-  border-radius: 14px;
+  border-radius: 16px;
   padding: 16px;
+}
+
+.metric-card.danger {
+  border-color: rgba(248, 113, 113, 0.35);
 }
 
 .info-card {
@@ -53,19 +57,32 @@ input {
 }
 
 .shadow-glow {
-  box-shadow: 0 0 30px rgba(34, 211, 238, 0.08);
+  box-shadow: 0 0 30px rgba(34, 211, 238, 0.09);
 }
 
-.underserved-label {
-  color: #ff6b6b;
-  font-weight: 900;
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-align: center;
-  text-shadow: 0 0 10px rgba(255, 0, 0, 0.95);
-  width: 130px;
-  transform: translate(-55px, -12px);
-  pointer-events: none;
+.leaflet-container {
+  background: #030712;
+  transition: all 0.4s ease;
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: #06101d;
+  color: white;
+  border: 1px solid rgba(34, 211, 238, 0.25);
+}
+
+.leaflet-popup-content {
+  color: white;
+  font-size: 13px;
+}
+
+.atm-marker {
+  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.9));
+}
+
+.bank-marker {
+  filter: drop-shadow(0 0 10px rgba(129, 140, 248, 0.95));
 }
 
 .pulse-circle {
@@ -75,7 +92,7 @@ input {
 @keyframes pulse-red {
   0% {
     stroke-opacity: 0.45;
-    fill-opacity: 0.1;
+    fill-opacity: 0.08;
   }
   50% {
     stroke-opacity: 1;
@@ -83,6 +100,6 @@ input {
   }
   100% {
     stroke-opacity: 0.45;
-    fill-opacity: 0.1;
+    fill-opacity: 0.08;
   }
 }
