@@ -1,172 +1,202 @@
-# 🏦 ATM Access Intelligence System  
-**Geospatial Cash Access Analysis & Underserved Region Detection**
+# 🏦 ATM Access Intelligence System
+
+A geospatial intelligence dashboard that analyzes and visualizes ATM and bank access across regions, identifies underserved areas, and provides actionable financial infrastructure insights.
 
 ---
 
-## 📌 Overview
+## 🚀 Overview
 
-The ATM Access Intelligence System is an interactive geospatial intelligence platform designed to analyze physical cash access infrastructure across regions.
+The **ATM Access Intelligence System** is an interactive mapping platform that evaluates cash access infrastructure using key real-world indicators:
 
-It visualizes ATM and bank distribution, compares regions, identifies underserved areas, and generates actionable insights such as:
+* ATM & bank density
+* Population pressure
+* Travel burden
+* Income friction
 
-- Coverage score  
-- Underserved risk  
-- Travel burden  
-- Infrastructure imbalance  
-
-This system follows a **70/30 Visualization-to-Intelligence architecture**, where the map provides spatial context and the dashboard delivers insights.
+It transforms raw geographic data into **decision-ready intelligence**, helping identify financial deserts and underserved zones.
 
 ---
 
-## 🎯 Objective
+## 🎯 Key Features
 
-To build a system that goes beyond simple mapping and answers:
+### 🗺️ Interactive Geospatial Map
 
-> "Which areas lack sufficient cash access, and why does it matter?"
+* Visualizes ATM and bank locations dynamically
+* Smart marker separation for clarity
+* Auto-fit map based on selected areas
 
----
+### ⚖️ Area Comparison Engine
 
-## 🧠 Key Features
-
-### 🌍 Interactive Map
-- Dark-themed geospatial visualization  
-- ATM and Bank markers  
-- South India bounded map  
-
-### 📊 Region Comparison
-- Compare two regions (Area A vs Area B)  
-- Real-time infrastructure comparison  
-- Dynamic priority detection  
+* Compare two regions (Area A vs Area B)
+* Coverage scoring system
+* Automatic intervention priority detection
 
 ### 🔴 Underserved Area Detection
-- Automatically identifies weaker region  
-- Highlights with pulsing red zone  
-- Smart visualization (no clutter)  
 
-### 🟡 Demographic Friction Layer
-- Optional overlay for infrastructure stress  
-- Shows areas with demand-supply imbalance  
+* Red-zone highlighting for weak access regions
+* Radius adjusts based on severity
 
-### 📈 Intelligence Dashboard
-Provides insights like:
-- Coverage score  
-- Underserved percentage  
-- ATM vs Bank ratio  
-- Average travel distance  
-- Area classification (Financial Desert)  
+### 🟡 Demographic Pressure Overlay
 
-### 🧾 Insight Panels
-- Why This Matters  
-- Underserved Area Scoring  
-- Demographic Overlay Explanation  
-- Proximity Modeling  
+* Highlights population and economic stress
+* Shows mismatch between demand and infrastructure
 
----
+### 📊 Intelligence Dashboard
 
-## 🏗️ Tech Stack
+* Coverage score & access gap
+* Risk classification (High / Moderate / Low)
+* ATM vs Bank distribution
+* Nearest ATM distance
 
-### Frontend
-- Next.js (App Router)  
-- TypeScript  
-- Tailwind CSS  
-- React Leaflet  
+### 📍 Proximity Modeling
 
-### Backend
-- FastAPI (Python)  
-- REST API (`/access-points`)  
-- Structured + mock data  
+* Calculates realistic distance to nearest ATM
 
-### Data Sources
-- OpenStreetMap (conceptual base)  
-- Synthetic ATM/Bank dataset  
+### 🧠 Insight Generation
+
+* Classifies regions into:
+
+  * Financial Desert
+  * Underserved
+  * Stable Access
+* Generates recommendations
 
 ---
 
-## 🧩 Architecture
+## 🧪 Technology Stack
 
-Frontend (Next.js)  
-↓  
-API Call (/access-points)  
-↓  
-Backend (FastAPI)  
-↓  
-Processed Data → Map + Dashboard Insights  
+**Frontend**
+
+* Next.js (App Router)
+* TypeScript
+* Tailwind CSS
+* React Leaflet
+
+**Backend**
+
+* FastAPI (Python)
+
+**Data**
+
+* Structured mock + API fallback
 
 ---
 
-## 🚀 How to Run
+## 🏗️ System Architecture
 
-### 1. Clone Project
-git clone <your-repo-link>  
-cd ATM-FINAL  
+```text
+Frontend (Next.js + Leaflet)
+        ↓
+FastAPI Backend
+        ↓
+Access Points Data
+        ↓
+Scoring Engine
+        ↓
+Visualization + Insights
+```
 
 ---
+
+## 📈 Scoring Model
+
+* Infrastructure (ATM + Bank count)
+* Population pressure penalty
+* Travel burden penalty
+* Income friction penalty
+
+**Output:**
+
+* Coverage Score (0–100)
+* Access Gap = 100 - Coverage
+
+---
+
+## 🧭 Classification Logic
+
+| Coverage | Classification   |
+| -------- | ---------------- |
+| < 35%    | Financial Desert |
+| 35–70%   | Underserved      |
+| > 70%    | Stable Access    |
+
+---
+
+## ⚙️ Setup Instructions
+
+### 1. Clone Repository
+
+```bash
+git clone https://github.com/your-username/atm-access-intelligence.git
+cd atm-access-intelligence
+```
 
 ### 2. Start Backend
-cd backend  
-uvicorn main:app --reload  
 
-Runs at: http://127.0.0.1:8000  
-
----
+```bash
+cd backend
+pip install -r requirements.txt
+python -m uvicorn main:app --reload
+```
 
 ### 3. Start Frontend
-cd frontend  
-npm install  
-npm run dev  
 
-Runs at: http://localhost:3000  
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
----
+### 4. Open Application
 
-## 🧪 How to Use
-
-1. Select **Area A** and **Area B**  
-2. Click **Compare Areas**  
-3. Observe:  
-   - 🔴 Red pulsing circle → underserved region  
-   - 🟡 Orange overlay → demographic friction  
-4. Read insights in dashboard  
+```text
+http://localhost:3000
+```
 
 ---
 
-## 🧠 Intelligence Logic
+## 🧩 Features in Action
 
-- Coverage = Number of access points per area  
-- Lower score = Higher underserved risk  
-- System compares both areas and highlights the weaker one  
-- If both are similar → neutral visualization  
-
----
-
-## 🎨 Design Principles
-
-- Dark theme: #030712  
-- Minimal clutter  
-- 70% Map → 30% Insights  
-- Focus on storytelling, not just data  
+* Toggle ATM / Bank visibility
+* Show underserved zones
+* Enable demographic pressure layer
+* Compare regions dynamically
 
 ---
 
-## 📌 Use Cases
+## 📊 Use Cases
 
-- Financial inclusion analysis  
-- ATM placement strategy  
-- Disaster preparedness (cash fallback zones)  
-- Banking infrastructure planning  
+* Financial inclusion analysis
+* ATM placement strategy
+* Urban planning
+* Policy decision support
 
 ---
 
-## 🏁 Conclusion
+## ⚠️ Limitations
 
-This project demonstrates how **geospatial data + intelligent visualization** can transform raw infrastructure data into actionable insights.
+* Uses mock / limited dataset
+* No real-time external API integration
+* Heuristic scoring model
 
-> Not just *where ATMs are*, but *where they should be*.
+---
+
+## 🔮 Future Improvements
+
+* Live OpenStreetMap integration
+* Heatmap visualization
+* ML-based scoring
+* Advanced analytics
 
 ---
 
 ## 👨‍💻 Author
 
-**Adithya Rajagopal**  
-BCA Honours  
-Mar Augusthinose College (MG University)  
+**Adithya Rajagopal**
+BCA Honours Student
+
+---
+
+## 💡 Final Note
+
+This project demonstrates how raw infrastructure data can be transformed into **actionable intelligence** for better financial accessibility planning.
