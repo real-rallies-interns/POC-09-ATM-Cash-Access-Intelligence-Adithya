@@ -3,9 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 
-const MapClient = dynamic(() => import("./MapClient"), {
-  ssr: false,
-});
+const MapClient = dynamic(() => import("./MapClient"), { ssr: false });
 
 type AccessPoint = {
   name: string;
@@ -22,31 +20,19 @@ type AreaProfile = {
   incomeFriction: number;
 };
 
+const API_BASE = "http://127.0.0.1:8000";
+
+const fallbackProfiles: Record<string, AreaProfile> = {
+  Delhi: { state: "Delhi", populationPressure: 91, travelBurden: 4.8, incomeFriction: 42 },
+  Patna: { state: "Bihar", populationPressure: 89, travelBurden: 8.8, incomeFriction: 64 },
+};
+
 const fallbackPoints: AccessPoint[] = [
   { name: "SBI ATM Delhi", type: "ATM", area: "Delhi", lat: 28.6315, lng: 77.2167 },
   { name: "HDFC Bank Delhi", type: "Bank", area: "Delhi", lat: 28.6139, lng: 77.209 },
   { name: "SBI ATM Patna", type: "ATM", area: "Patna", lat: 25.5941, lng: 85.1376 },
   { name: "PNB Patna", type: "Bank", area: "Patna", lat: 25.61, lng: 85.141 },
 ];
-
-const areaProfiles: Record<string, AreaProfile> = {
-  Delhi: { state: "Delhi", populationPressure: 91, travelBurden: 4.8, incomeFriction: 42 },
-  Mumbai: { state: "Maharashtra", populationPressure: 94, travelBurden: 5.2, incomeFriction: 48 },
-  Bengaluru: { state: "Karnataka", populationPressure: 82, travelBurden: 4.1, incomeFriction: 36 },
-  Chennai: { state: "Tamil Nadu", populationPressure: 78, travelBurden: 5.8, incomeFriction: 44 },
-  Hyderabad: { state: "Telangana", populationPressure: 76, travelBurden: 5.4, incomeFriction: 41 },
-  Kolkata: { state: "West Bengal", populationPressure: 84, travelBurden: 6.2, incomeFriction: 52 },
-  Kochi: { state: "Kerala", populationPressure: 58, travelBurden: 3.8, incomeFriction: 28 },
-  Ahmedabad: { state: "Gujarat", populationPressure: 72, travelBurden: 5.6, incomeFriction: 39 },
-  Jaipur: { state: "Rajasthan", populationPressure: 68, travelBurden: 6.7, incomeFriction: 46 },
-  Lucknow: { state: "Uttar Pradesh", populationPressure: 81, travelBurden: 7.2, incomeFriction: 55 },
-  Guwahati: { state: "Assam", populationPressure: 73, travelBurden: 8.4, incomeFriction: 61 },
-  Patna: { state: "Bihar", populationPressure: 89, travelBurden: 8.8, incomeFriction: 64 },
-  Bhopal: { state: "Madhya Pradesh", populationPressure: 66, travelBurden: 7.4, incomeFriction: 49 },
-  Bhubaneswar: { state: "Odisha", populationPressure: 63, travelBurden: 7.9, incomeFriction: 54 },
-};
-
-const areas = Object.keys(areaProfiles);
 
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
@@ -68,6 +54,7 @@ function distanceKm(a: AccessPoint, b: AccessPoint) {
 
 export default function Home() {
   const [points, setPoints] = useState<AccessPoint[]>(fallbackPoints);
+  const [areaProfiles, setAreaProfiles] = useState<Record<string, AreaProfile>>(fallbackProfiles);
   const [dataMode, setDataMode] = useState("Fallback Data");
 
   const [areaA, setAreaA] = useState("Delhi");
@@ -78,20 +65,33 @@ export default function Home() {
   const [showUnderserved, setShowUnderserved] = useState(true);
   const [showDemographic, setShowDemographic] = useState(true);
 
+  const areas = Object.keys(areaProfiles);
+
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/access-points")
-      .then((res) => {
-        if (!res.ok) throw new Error("Backend failed");
-        return res.json();
-      })
-      .then((data: AccessPoint[]) => {
-        if (Array.isArray(data) && data.length > 0) {
-          setPoints(data);
-          setDataMode("FastAPI Live Data");
+    Promise.all([
+      fetch(`${API_BASE}/access-points`).then((res) => res.json()),
+      fetch(`${API_BASE}/area-profiles`).then((res) => res.json()),
+    ])
+      .then(([accessPoints, profiles]) => {
+        if (Array.isArray(accessPoints) && accessPoints.length > 0) {
+          setPoints(accessPoints);
         }
+
+        if (profiles && typeof profiles === "object") {
+          setAreaProfiles(profiles);
+
+          const backendAreas = Object.keys(profiles);
+          if (backendAreas.length >= 2) {
+            setAreaA(backendAreas[0]);
+            setAreaB(backendAreas[1]);
+          }
+        }
+
+        setDataMode("FastAPI Live Synthetic Data");
       })
       .catch(() => {
         setPoints(fallbackPoints);
+        setAreaProfiles(fallbackProfiles);
         setDataMode("Fallback Data");
       });
   }, []);
@@ -103,6 +103,8 @@ export default function Home() {
     const atms = areaPoints.filter((p) => p.type === "ATM");
     const banks = areaPoints.filter((p) => p.type === "Bank");
     const profile = areaProfiles[area];
+
+    if (!profile) return 0;
 
     if (!atms.length || !banks.length) {
       return Number(clamp(profile.travelBurden, 3.5, 13.5).toFixed(1));
@@ -121,6 +123,24 @@ export default function Home() {
   const analyzeArea = (area: string) => {
     const areaPoints = getAreaPoints(area);
     const profile = areaProfiles[area];
+
+    if (!profile) {
+      return {
+        area,
+        state: "Unknown",
+        atmCount: 0,
+        bankCount: 0,
+        totalPoints: 0,
+        coverage: 0,
+        accessGap: 100,
+        riskLevel: "High Risk",
+        classification: "Financial Desert",
+        travelBurden: 0,
+        proximityDistance: 0,
+        populationPressure: 0,
+        incomeFriction: 0,
+      };
+    }
 
     const atmCount = areaPoints.filter((p) => p.type === "ATM").length;
     const bankCount = areaPoints.filter((p) => p.type === "Bank").length;
@@ -146,11 +166,7 @@ export default function Home() {
       coverage < 35 ? "High Risk" : coverage < 70 ? "Moderate Risk" : "Low Risk";
 
     const classification =
-      coverage < 35
-        ? "Financial Desert"
-        : coverage < 70
-        ? "Underserved"
-        : "Stable Access";
+      coverage < 35 ? "Financial Desert" : coverage < 70 ? "Underserved" : "Stable Access";
 
     return {
       area,
@@ -169,8 +185,8 @@ export default function Home() {
     };
   };
 
-  const areaAReport = useMemo(() => analyzeArea(areaA), [areaA, points]);
-  const areaBReport = useMemo(() => analyzeArea(areaB), [areaB, points]);
+  const areaAReport = useMemo(() => analyzeArea(areaA), [areaA, points, areaProfiles]);
+  const areaBReport = useMemo(() => analyzeArea(areaB), [areaB, points, areaProfiles]);
 
   const isEqual = areaAReport.coverage === areaBReport.coverage;
 
@@ -206,11 +222,11 @@ export default function Home() {
             <div className="flex flex-wrap items-end gap-4">
               <div>
                 <p className="text-[10px] font-bold tracking-[0.28em] text-cyan-400">
-                  REAL RAILS / CASH ACCESS INTELLIGENCE
+                  REAL RAILS • CASH ACCESS INTELLIGENCE SYSTEM
                 </p>
-                <h1 className="mt-1 text-2xl font-black">India ATM & Bank Access Map</h1>
+                <h1 className="mt-1 text-2xl font-black">Cash Access Intelligence Platform</h1>
                 <p className="mt-1 text-xs text-slate-400">
-                  Source: {dataMode} • {points.length} access points loaded
+                  Live Infrastructure Intelligence • Synthetic Data Simulation Active • {points.length} access points
                 </p>
               </div>
 
@@ -284,7 +300,7 @@ export default function Home() {
 
       <aside className="real-panel overflow-y-auto p-6">
         <p className="text-xs font-bold tracking-[0.28em] text-cyan-400">INTELLIGENCE DASHBOARD</p>
-        <h2 className="mt-2 text-3xl font-black">Access Risk Summary</h2>
+        <h2 className="mt-2 text-3xl font-black">Access Intelligence Overview</h2>
 
         <div className="mt-6 grid grid-cols-2 gap-4">
           <div className="metric-card">
@@ -347,8 +363,7 @@ export default function Home() {
           <h3 className="text-lg font-bold text-cyan-300">Proximity Modeling</h3>
           <p className="mt-3 leading-7 text-slate-300">
             Estimated average distance to the nearest ATM in {weakerArea.area} is{" "}
-            <b>{weakerArea.proximityDistance} km</b>. This represents the physical effort required
-            to access cash.
+            <b>{weakerArea.proximityDistance} km</b>.
           </p>
         </section>
 
@@ -361,15 +376,14 @@ export default function Home() {
           <h3 className="text-lg font-bold text-cyan-300">Why This Matters</h3>
           <p className="mt-3 leading-7 text-slate-300">
             Cash is still a fallback payment rail during outages, emergencies, and exclusion from
-            digital payment systems. Weak physical access can reduce financial resilience.
+            digital payment systems.
           </p>
         </section>
 
         <section className="info-card mt-5">
           <h3 className="text-lg font-bold text-cyan-300">Who Controls the Rail</h3>
           <p className="mt-3 leading-7 text-slate-300">
-            Banks, ATM deployers, regulators, and local planners shape the physical cash access
-            network. This dashboard helps identify where that rail is failing.
+            Banks, ATM deployers, regulators, and local planners shape the physical cash access network.
           </p>
         </section>
       </aside>

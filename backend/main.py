@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import random
 
-app = FastAPI()
+app = FastAPI(title="ATM Access Intelligence API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -11,85 +12,139 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-access_points = [
-    {"name": "SBI ATM Palayam", "type": "ATM", "area": "Thiruvananthapuram", "lat": 8.5097, "lng": 76.9490},
-    {"name": "Federal ATM Pattom", "type": "ATM", "area": "Thiruvananthapuram", "lat": 8.5231, "lng": 76.9436},
-    {"name": "Canara Bank Statue", "type": "Bank", "area": "Thiruvananthapuram", "lat": 8.4883, "lng": 76.9492},
+AREA_PROFILES = {
+    "Delhi": {"state": "Delhi", "populationPressure": 91, "travelBurden": 4.8, "incomeFriction": 42},
+    "Mumbai": {"state": "Maharashtra", "populationPressure": 94, "travelBurden": 5.2, "incomeFriction": 48},
+    "Bengaluru": {"state": "Karnataka", "populationPressure": 82, "travelBurden": 4.1, "incomeFriction": 36},
+    "Chennai": {"state": "Tamil Nadu", "populationPressure": 78, "travelBurden": 5.8, "incomeFriction": 44},
+    "Hyderabad": {"state": "Telangana", "populationPressure": 76, "travelBurden": 5.4, "incomeFriction": 41},
+    "Kolkata": {"state": "West Bengal", "populationPressure": 84, "travelBurden": 6.2, "incomeFriction": 52},
+    "Kochi": {"state": "Kerala", "populationPressure": 58, "travelBurden": 3.8, "incomeFriction": 28},
+    "Ahmedabad": {"state": "Gujarat", "populationPressure": 72, "travelBurden": 5.6, "incomeFriction": 39},
+    "Jaipur": {"state": "Rajasthan", "populationPressure": 68, "travelBurden": 6.7, "incomeFriction": 46},
+    "Lucknow": {"state": "Uttar Pradesh", "populationPressure": 81, "travelBurden": 7.2, "incomeFriction": 55},
+    "Guwahati": {"state": "Assam", "populationPressure": 73, "travelBurden": 8.4, "incomeFriction": 61},
+    "Patna": {"state": "Bihar", "populationPressure": 89, "travelBurden": 8.8, "incomeFriction": 64},
+    "Bhopal": {"state": "Madhya Pradesh", "populationPressure": 66, "travelBurden": 7.4, "incomeFriction": 49},
+    "Bhubaneswar": {"state": "Odisha", "populationPressure": 63, "travelBurden": 7.9, "incomeFriction": 54},
+}
 
-    {"name": "SBI ATM Chinnakada", "type": "ATM", "area": "Kollam", "lat": 8.8932, "lng": 76.6141},
-    {"name": "Axis ATM Kollam Town", "type": "ATM", "area": "Kollam", "lat": 8.8853, "lng": 76.5910},
-    {"name": "South Indian Bank Kollam", "type": "Bank", "area": "Kollam", "lat": 8.8818, "lng": 76.5920},
+AREA_CENTERS = {
+    "Delhi": (28.6139, 77.2090),
+    "Mumbai": (19.0760, 72.8777),
+    "Bengaluru": (12.9716, 77.5946),
+    "Chennai": (13.0827, 80.2707),
+    "Hyderabad": (17.3850, 78.4867),
+    "Kolkata": (22.5726, 88.3639),
+    "Kochi": (9.9312, 76.2673),
+    "Ahmedabad": (23.0225, 72.5714),
+    "Jaipur": (26.9124, 75.7873),
+    "Lucknow": (26.8467, 80.9462),
+    "Guwahati": (26.1445, 91.7362),
+    "Patna": (25.5941, 85.1376),
+    "Bhopal": (23.2599, 77.4126),
+    "Bhubaneswar": (20.2961, 85.8245),
+}
 
-    {"name": "SBI ATM Pathanamthitta", "type": "ATM", "area": "Pathanamthitta", "lat": 9.2648, "lng": 76.7870},
-    {"name": "Union Bank Pathanamthitta", "type": "Bank", "area": "Pathanamthitta", "lat": 9.2660, "lng": 76.7835},
+AREA_COUNTS = {
+    "Delhi": {"ATM": 10, "Bank": 5},
+    "Mumbai": {"ATM": 10, "Bank": 5},
+    "Bengaluru": {"ATM": 8, "Bank": 4},
+    "Chennai": {"ATM": 7, "Bank": 4},
+    "Hyderabad": {"ATM": 7, "Bank": 4},
+    "Kolkata": {"ATM": 7, "Bank": 4},
+    "Kochi": {"ATM": 6, "Bank": 4},
+    "Ahmedabad": {"ATM": 5, "Bank": 3},
+    "Jaipur": {"ATM": 5, "Bank": 3},
+    "Lucknow": {"ATM": 4, "Bank": 2},
+    "Guwahati": {"ATM": 3, "Bank": 1},
+    "Patna": {"ATM": 3, "Bank": 1},
+    "Bhopal": {"ATM": 3, "Bank": 2},
+    "Bhubaneswar": {"ATM": 4, "Bank": 2},
+}
 
-    {"name": "HDFC ATM Alappuzha", "type": "ATM", "area": "Alappuzha", "lat": 9.4981, "lng": 76.3388},
-    {"name": "SBI Branch Alappuzha", "type": "Bank", "area": "Alappuzha", "lat": 9.5014, "lng": 76.3383},
+BANK_NAMES = ["SBI", "HDFC", "ICICI", "Federal Bank", "Canara Bank", "Axis Bank"]
 
-    {"name": "Canara ATM Kottayam", "type": "ATM", "area": "Kottayam", "lat": 9.5916, "lng": 76.5222},
-    {"name": "Federal Bank Kottayam", "type": "Bank", "area": "Kottayam", "lat": 9.5950, "lng": 76.5278},
-    {"name": "SBI ATM Ettumanoor", "type": "ATM", "area": "Kottayam", "lat": 9.6727, "lng": 76.5633},
 
-    {"name": "SBI ATM Thodupuzha", "type": "ATM", "area": "Idukki", "lat": 9.8944, "lng": 76.7221},
-    {"name": "Kerala Gramin Bank Idukki", "type": "Bank", "area": "Idukki", "lat": 9.8940, "lng": 76.7180},
+def generate_access_points():
+    random.seed(9)
+    data = []
 
-    {"name": "Federal ATM Ernakulam", "type": "ATM", "area": "Ernakulam", "lat": 9.9816, "lng": 76.2999},
-    {"name": "SBI ATM Kochi", "type": "ATM", "area": "Ernakulam", "lat": 9.9312, "lng": 76.2673},
-    {"name": "Canara Bank MG Road", "type": "Bank", "area": "Ernakulam", "lat": 9.9735, "lng": 76.2863},
-    {"name": "HDFC ATM Kakkanad", "type": "ATM", "area": "Ernakulam", "lat": 10.0159, "lng": 76.3419},
-    {"name": "Union Bank Aluva", "type": "Bank", "area": "Ernakulam", "lat": 10.1076, "lng": 76.3516},
+    for area, center in AREA_CENTERS.items():
+        lat, lng = center
+        counts = AREA_COUNTS[area]
 
-    {"name": "HDFC ATM Thrissur", "type": "ATM", "area": "Thrissur", "lat": 10.5276, "lng": 76.2144},
-    {"name": "SBI Branch Thrissur", "type": "Bank", "area": "Thrissur", "lat": 10.5247, "lng": 76.2130},
-    {"name": "Federal ATM Guruvayur", "type": "ATM", "area": "Thrissur", "lat": 10.5943, "lng": 76.0411},
+        for i in range(counts["ATM"]):
+            bank = random.choice(BANK_NAMES)
+            data.append({
+                "name": f"{bank} ATM {area} Zone {i + 1}",
+                "type": "ATM",
+                "area": area,
+                "lat": round(lat + random.uniform(-0.09, 0.09), 6),
+                "lng": round(lng + random.uniform(-0.09, 0.09), 6),
+                "data_label": "synthetic_mock_data"
+            })
 
-    {"name": "SBI ATM Palakkad", "type": "ATM", "area": "Palakkad", "lat": 10.7867, "lng": 76.6548},
-    {"name": "Canara Bank Palakkad", "type": "Bank", "area": "Palakkad", "lat": 10.7732, "lng": 76.6510},
-    {"name": "Axis ATM Ottapalam", "type": "ATM", "area": "Palakkad", "lat": 10.7737, "lng": 76.3776},
+        for i in range(counts["Bank"]):
+            bank = random.choice(BANK_NAMES)
+            data.append({
+                "name": f"{bank} {area} Branch {i + 1}",
+                "type": "Bank",
+                "area": area,
+                "lat": round(lat + random.uniform(-0.08, 0.08), 6),
+                "lng": round(lng + random.uniform(-0.08, 0.08), 6),
+                "data_label": "synthetic_mock_data"
+            })
 
-    {"name": "SBI ATM Malappuram", "type": "ATM", "area": "Malappuram", "lat": 11.0732, "lng": 76.0740},
-    {"name": "Federal Bank Manjeri", "type": "Bank", "area": "Malappuram", "lat": 11.1203, "lng": 76.1196},
+    return data
 
-    {"name": "HDFC ATM Kozhikode", "type": "ATM", "area": "Kozhikode", "lat": 11.2588, "lng": 75.7804},
-    {"name": "SBI Branch Kozhikode", "type": "Bank", "area": "Kozhikode", "lat": 11.2519, "lng": 75.7793},
-    {"name": "Axis ATM Mavoor Road", "type": "ATM", "area": "Kozhikode", "lat": 11.2671, "lng": 75.7935},
 
-    {"name": "SBI ATM Kalpetta", "type": "ATM", "area": "Wayanad", "lat": 11.6104, "lng": 76.0827},
-    {"name": "South Indian Bank Sulthan Bathery", "type": "Bank", "area": "Wayanad", "lat": 11.6656, "lng": 76.2777},
+ACCESS_POINTS = generate_access_points()
 
-    {"name": "Federal ATM Kannur", "type": "ATM", "area": "Kannur", "lat": 11.8745, "lng": 75.3704},
-    {"name": "SBI Branch Taliparamba", "type": "Bank", "area": "Kannur", "lat": 12.0395, "lng": 75.3609},
-    {"name": "Canara ATM Thalassery", "type": "ATM", "area": "Kannur", "lat": 11.7481, "lng": 75.4929},
-
-    {"name": "SBI ATM Kasaragod", "type": "ATM", "area": "Kasaragod", "lat": 12.4996, "lng": 74.9869},
-    {"name": "Federal Bank Kanhangad", "type": "Bank", "area": "Kasaragod", "lat": 12.3151, "lng": 75.0900},
-]
-
-areas = [
-    {"area": "Thiruvananthapuram", "lat": 8.5241, "lng": 76.9366},
-    {"area": "Kollam", "lat": 8.8932, "lng": 76.6141},
-    {"area": "Pathanamthitta", "lat": 9.2648, "lng": 76.7870},
-    {"area": "Alappuzha", "lat": 9.4981, "lng": 76.3388},
-    {"area": "Kottayam", "lat": 9.5916, "lng": 76.5222},
-    {"area": "Idukki", "lat": 9.8497, "lng": 76.9710},
-    {"area": "Ernakulam", "lat": 9.9816, "lng": 76.2999},
-    {"area": "Thrissur", "lat": 10.5276, "lng": 76.2144},
-    {"area": "Palakkad", "lat": 10.7867, "lng": 76.6548},
-    {"area": "Malappuram", "lat": 11.0510, "lng": 76.0711},
-    {"area": "Kozhikode", "lat": 11.2588, "lng": 75.7804},
-    {"area": "Wayanad", "lat": 11.6854, "lng": 76.1320},
-    {"area": "Kannur", "lat": 11.8745, "lng": 75.3704},
-    {"area": "Kasaragod", "lat": 12.4996, "lng": 74.9869},
-]
 
 @app.get("/")
-def home():
-    return {"message": "Cash Access Intelligence API Running"}
+def root():
+    return {
+        "project": "ATM Access Intelligence System",
+        "status": "running",
+        "data_note": "Synthetic mock data package for demonstration and intelligence modeling"
+    }
+
 
 @app.get("/access-points")
 def get_access_points():
-    return access_points
+    return ACCESS_POINTS
+
 
 @app.get("/areas")
 def get_areas():
-    return areas
+    return list(AREA_PROFILES.keys())
+
+
+@app.get("/area-profiles")
+def get_area_profiles():
+    return AREA_PROFILES
+
+
+@app.get("/mock-data-dictionary")
+def get_data_dictionary():
+    return {
+        "dataset": "Synthetic ATM and Bank Access Data",
+        "entities": {
+            "AccessPoint": {
+                "name": "Name of ATM or bank branch",
+                "type": "ATM or Bank",
+                "area": "City / region name",
+                "lat": "Latitude coordinate",
+                "lng": "Longitude coordinate",
+                "data_label": "Marks record as synthetic mock data"
+            },
+            "AreaProfile": {
+                "state": "Indian state or region",
+                "populationPressure": "Demand pressure score",
+                "travelBurden": "Estimated travel difficulty",
+                "incomeFriction": "Economic access friction"
+            }
+        },
+        "note": "All records are synthetic and created for academic PoC demonstration."
+    }
